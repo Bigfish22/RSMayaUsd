@@ -3,6 +3,7 @@ from pxr import UsdShade, Sdf, Gf
 import maya.api.OpenMaya as om2
 import traceback
 from math import pi
+import re
 
 mayaTypeToSdf = {'kFloat' : Sdf.ValueTypeNames.Float,
                 'kInt' : Sdf.ValueTypeNames.Int,
@@ -34,11 +35,14 @@ mayaShaderToRS = {"MultiOutputChannelTexmapToTexmap" : ["", 'out'],
                 "RedshiftMathBiasColor" : ['RSMathBiasColor', 'outColor'],
                 "RedshiftColorRange" : ['RSColorRange', 'out'],
                 "RedshiftColorConstant" : ['RSColorConstant', 'outColor'],
+                "colorConstant" : ['RSColorConstant', 'outColor'], #Maya color Constant
+                "floatConstant" : ['RSScalarConstant', 'out'], #Maya float Constant
                 "RedshiftMathExpColor" : ['RSMathExpColor', 'outColor'],
                 "RedshiftMathGainColor" : ['RSMathGainColor', 'outColor'],
                 "RedshiftMathInvColor" : ['RSMathInvertColor', 'out'],
                 "RedshiftColorMaker" : ['RSColorMaker', 'outColor'],
                 "RedshiftColorMix" : ['RSColorMix', 'outColor'],
+                "blendColors" : ['RSColorMix', 'outColor'], #Maya blend colors
                 "RedshiftMathSaturateColor" : ['RSMathSaturateColor', 'outColor'],
                 "RedshiftColorSplitter" : ['RSColorSplitter', ''],
                 "RedshiftMathSubColor" : ['RSMathSubColor', 'outColor'],
@@ -106,7 +110,8 @@ mayaShaderToRS = {"MultiOutputChannelTexmapToTexmap" : ["", 'out'],
                 "RedshiftMathFloorVector" : ['RSMathFloorVector', 'out'],
                 "RedshiftMathFracVector" : ['RSMathFracVector', 'out'],
                 "RedshiftMathGainVector" : ['RSMathGainVector', 'out'],
-                "RedshiftMathInvVector" : ['RSMathInvertVector', 'out'],
+                "RedshiftMathInvVector" : ['RSMathInvVector', 'out'],
+                "reverse"               : ['RSMathInvVector', 'out'], #maya reverse
                 "RedshiftMathLengthVector" : ['RSMathLengthVector', 'out'],
                 "RedshiftMathLnVector" : ['RSMathLnVector', 'out'],
                 "RedshiftMathLogVector" : ['RSMathLogVector', 'out'],
@@ -138,7 +143,12 @@ mayaShaderToRS = {"MultiOutputChannelTexmapToTexmap" : ["", 'out'],
                 "RedshiftColorLayer" :      ['RSColorLayer', 'outColor'],
                 "RedshiftVertexColor " :      ['RSUserDataColor', 'out']}
 
-propertyRemaps = {"RedshiftMaterialBlender" : {"outColor": "out"}}
+propertyRemaps = {"RedshiftMaterialBlender" : {"outColor": "out"},
+                  "blendColors" : {"color1" : "input1", "color2" : "input2", "blender" : "mixAmount", "output" : "outColor"},
+                  "reverse"  : {"output" : "out"},
+                  "colorConstant" : {"inColor": "color"},
+                  "floatConstant" : {"inFloat": "val", "outFloat" : "out"}
+                  }
 
 class RSShaderWriter(mayaUsd.lib.ShaderWriter):
     def Write(self, usdTime):
@@ -156,7 +166,7 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
 
             for i in range(0, mayaNode.attributeCount()-1):
                 attrName : str = om2.MFnAttribute(mayaNode.attribute(i)).name
-                if attrName.endswith(('R','G','B')):
+                if attrName.endswith(('R','G','B','X','Y','Z')):
                     continue
                 plug = mayaNode.findPlug(attrName, True)
 
@@ -207,6 +217,7 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             value = plug.asInt()
             sdfType = mayaTypeToSdf[type]
 
+        attrName = self.usdAttrName(mayaNode.typeName, attrName)
         prim.CreateInput(attrName, sdfType).Set(value)
 
     def addNode(self, prim, mayaNode, attrName, plug):
@@ -221,7 +232,9 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
 
             nodePrim = UsdShade.Shader.Define(self.GetUsdStage(), ((self.GetUsdPath()).GetParentPath()).AppendPath(nodeToAdd.name()))
 
-            prim.CreateInput(attrName, Sdf.ValueTypeNames.Token).ConnectToSource(nodePrim.ConnectableAPI(), outputAttrName)
+            attrName = self.usdAttrName(mayaNode.typeName, attrName)
+            sdfType = mayaTypeToSdf[self.getMayaType(plug)]
+            prim.CreateInput(attrName, sdfType).ConnectToSource(nodePrim.ConnectableAPI(), outputAttrName)
         except Exception as e:
             print('Write() - Error: %s' % str(e))
             print(traceback.format_exc())
@@ -232,6 +245,7 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
         return attrName
 
     def usdAttrName(self, className, attrName):
+        print(className)
         attrName = self.clearSubChannel(attrName)
         if className in propertyRemaps:
             for property in propertyRemaps[className]:
@@ -290,6 +304,8 @@ class RSTextureWriter(mayaUsd.lib.ShaderWriter):
 
             
             texturePath = mayaNode.findPlug('fileTextureName', True).asString()
+            if mayaNode.findPlug('uvTilingMode', False).asInt() == 3:
+                texturePath = re.sub("1[0-9]{3}", "<UDIM>", texturePath)
             textureShader.CreateInput("tex0", Sdf.ValueTypeNames.Asset).Set(texturePath)
             colorspace = mayaNode.findPlug('colorSpace', True).asString()
             textureShader.CreateInput("tex0_colorSpace", Sdf.ValueTypeNames.String).Set(colorspace)
@@ -315,11 +331,10 @@ class RSTextureWriter(mayaUsd.lib.ShaderWriter):
     @classmethod
     def CanExport(cls, exportArgs):
         return mayaUsd.lib.ShaderWriter.ContextSupport.Supported
-    
+
+
+
 for shaderName in mayaShaderToRS:
     mayaUsd.lib.ShaderWriter.Register(RSShaderWriter, shaderName)
 
-#mayaUsd.lib.ShaderWriter.Register(RSShaderWriter, "RedshiftStandardMaterial")
-#mayaUsd.lib.ShaderWriter.Register(RSShaderWriter, "RedshiftJitter")
-#mayaUsd.lib.ShaderWriter.Register(RSShaderWriter, "RedshiftDisplacement")
 mayaUsd.lib.ShaderWriter.Register(RSTextureWriter, "file")
