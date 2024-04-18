@@ -147,7 +147,8 @@ propertyRemaps = {"RedshiftMaterialBlender" : {"outColor": "out"},
                   "blendColors" : {"color1" : "input1", "color2" : "input2", "blender" : "mixAmount", "output" : "outColor"},
                   "reverse"  : {"output" : "out"},
                   "colorConstant" : {"inColor": "color"},
-                  "floatConstant" : {"inFloat": "val", "outFloat" : "out"}
+                  "floatConstant" : {"inFloat": "val", "outFloat" : "out"},
+                  "file" : {"outAlpha" : "outColor"}
                   }
 
 class RSShaderWriter(mayaUsd.lib.ShaderWriter):
@@ -159,7 +160,6 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             mayaNode = om2.MFnDependencyNode(self.GetMayaObject())
             materialPrim = UsdShade.Material.Get(self.GetUsdStage(), (self.GetUsdPath()).GetParentPath())
             materialNodeName = str((self.GetUsdPath()).GetParentPath()).split("/")[-1]
-            print(materialNodeName)
             
             nodeShader = UsdShade.Shader.Define(self.GetUsdStage(), (self.GetUsdPath()))
             nodeShader.CreateIdAttr("redshift::" + mayaShaderToRS[mayaNode.typeName][0])
@@ -178,7 +178,6 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
                         if destNode.typeName == "shadingEngine" and destNode.name() == materialNodeName:
                             isSurfaceNode = True
                             surfConnections[destPlug.partialName(useLongNames = True)] = attrName
-                            print(attrName, ":", destPlug.partialName(useLongNames = True))
                 else:
                     self.addProperty(nodeShader, mayaNode, attrName, plug)
 
@@ -245,7 +244,6 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
         return attrName
 
     def usdAttrName(self, className, attrName):
-        print(className)
         attrName = self.clearSubChannel(attrName)
         if className in propertyRemaps:
             for property in propertyRemaps[className]:
@@ -310,7 +308,7 @@ class RSTextureWriter(mayaUsd.lib.ShaderWriter):
             colorspace = mayaNode.findPlug('colorSpace', True).asString()
             textureShader.CreateInput("tex0_colorSpace", Sdf.ValueTypeNames.String).Set(colorspace)
 
-            textureShader.CreateOutput("outColor", Sdf.ValueTypeNames.Token)
+            #textureShader.CreateOutput("outColor", Sdf.ValueTypeNames.Token)
 
             #Todo add tiling/scale/colorspace/udim mode
             mayaTexCord = om2.MFnDependencyNode(mayaNode.findPlug("uvCoord", True).source().node())
