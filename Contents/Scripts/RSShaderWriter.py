@@ -9,7 +9,8 @@ mayaTypeToSdf = {'kFloat' : Sdf.ValueTypeNames.Float,
                 'kInt' : Sdf.ValueTypeNames.Int,
                 'k3Float' : Sdf.ValueTypeNames.Color3f,
                 'Kstring' : Sdf.ValueTypeNames.String,
-                'k3Float' : Sdf.ValueTypeNames.Float3}
+                'k3Float' : Sdf.ValueTypeNames.Float3,
+                'kBool' : Sdf.ValueTypeNames.Bool}
 
 
 # mayaShaderToRS = {"RedshiftStandardMaterial": ['StandardMaterial', 'outColor'],
@@ -164,7 +165,7 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             nodeShader = UsdShade.Shader.Define(self.GetUsdStage(), (self.GetUsdPath()))
             nodeShader.CreateIdAttr("redshift::" + mayaShaderToRS[mayaNode.typeName][0])
 
-            for i in range(0, mayaNode.attributeCount()-1):
+            for i in range(0, mayaNode.attributeCount()):
                 attrName : str = om2.MFnAttribute(mayaNode.attribute(i)).name
                 if attrName.endswith(('R','G','B','X','Y','Z')):
                     continue
@@ -214,6 +215,9 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             sdfType = mayaTypeToSdf[type]
         elif type == 'kInt':
             value = plug.asInt()
+            sdfType = mayaTypeToSdf[type]
+        elif type == "kBool":
+            value = plug.asBool()
             sdfType = mayaTypeToSdf[type]
 
         attrName = self.usdAttrName(mayaNode.typeName, attrName)
@@ -269,6 +273,7 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
         
         typeMap = {om2.MFnNumericData.kFloat:   'kFloat',
                     om2.MFnNumericData.k3Float: 'k3Float',
+                    om2.MFnNumericData.kBoolean: 'kBool',
                     om2.MFnData.kString:        'Kstring',
                     om2.MFnNumericData.kInt:   'kInt'}
         
