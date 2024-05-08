@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ApplicationPackage SchemaVersion="1.0"
+ProductType="Application"
+AutodeskProduct="Maya" 
+Name="RSUSDExport for Autodesk Maya" 
+AppVersion="1.0.0.142" 
+FriendlyVersion="1.0.0.142" 
+AppNameSpace="appstore.exchange.autodesk.com" 
+Author="Ben" 
+UpgradeCode="{4f6e7e7c-2024-4093-8063-4be9f1b7f00c}" 
+ProductCode="*" 
+Description="RSUSDExport for Autodesk Maya">
+
+  <CompanyDetails Name="Benjamin Mikhaiel" 
+  Url="https://github.com/Bigfish22/RSMayaUsd" 
+  Email="benjaminmikhaiel@gmail.com" />
+
+  <RuntimeRequirements OS="win64|macOS|linux" Platform="Maya" SeriesMin="2022" SeriesMax="2025" />
+  <Components Description="RSMayaUSD">
+    <RuntimeRequirements OS="win64|macOS|linux" Platform="Maya" SeriesMin="2022" SeriesMax="2025" />
+    <MayaEnv expr="MAYA_PLUG_IN_PATH+:=Scripts" />
+    <ComponentEntry ModuleName="./Contents/Scripts/RegisterPlug.py" AutoLoad="True" />
+  </Components>
+</ApplicationPackage>

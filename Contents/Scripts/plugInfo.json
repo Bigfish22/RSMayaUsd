@@ -1,0 +1,25 @@
+{
+  "Plugins":[
+   {
+     "Info": {
+       "UsdMaya": {
+         "ShaderWriter": {
+           "providesTranslator": [
+             "RS Standard Material",
+             "RS Principled Hair",
+             "RS Sprite",
+             "RS Material Blender",
+             "RS Volume",
+             "RS Incandescent",
+             "RS Store Color To AOV",
+             "RedshiftStandardMaterial"
+           ]
+         },
+         "JobContextPlugin": {}
+       }
+     },
+     "Name": "RSShaderWriter",
+     "Type": "python"
+   }
+  ]
+}

@@ -308,7 +308,10 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             
     @classmethod
     def CanExport(cls, exportArgs):
-        return mayaUsd.lib.ShaderWriter.ContextSupport.Supported
+        if "redshift_usd_material" in exportArgs.convertMaterialsTo:
+            return mayaUsd.lib.ShaderWriter.ContextSupport.Supported
+        else:
+            return mayaUsd.lib.ShaderWriter.ContextSupport.Unsupported
             
 class RSTextureWriter(mayaUsd.lib.ShaderWriter):
     def Write(self, usdTime):
@@ -347,7 +350,10 @@ class RSTextureWriter(mayaUsd.lib.ShaderWriter):
         
     @classmethod
     def CanExport(cls, exportArgs):
-        return mayaUsd.lib.ShaderWriter.ContextSupport.Supported
+        if "redshift_usd_material" in exportArgs.convertMaterialsTo:
+            return mayaUsd.lib.ShaderWriter.ContextSupport.Supported
+        else:
+            return mayaUsd.lib.ShaderWriter.ContextSupport.Unsupported
 
 
 
