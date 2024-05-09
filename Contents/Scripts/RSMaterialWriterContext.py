@@ -7,8 +7,8 @@
 def RSShaderWriterContext():
     # build a dictionary of the options to set using the context
     extraArgs = {}
-    
-    extraArgs['convertMaterialsTo']  = ['redshift_usd_material']
+    extraArgs['chaser'] = ["RSExportChaserStr"]
+    #extraArgs['convertMaterialsTo']  = ['redshift_usd_material']
     return extraArgs
 
 import mayaUsd.lib

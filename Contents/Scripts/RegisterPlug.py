@@ -14,4 +14,5 @@ path = os.path.join(pluginPath, 'plugInfo.json')
 sys.path.insert(0, "pluginPath")
 
 import RSMaterialWriterContext
+import RSExportChaser
 pxr.Plug.Registry().RegisterPlugins(path)
