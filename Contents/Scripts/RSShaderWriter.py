@@ -24,6 +24,7 @@ mayaTypeToSdf = {'kFloat' : Sdf.ValueTypeNames.Float,
                 'k3Float' : Sdf.ValueTypeNames.Color3f,
                 'Kstring' : Sdf.ValueTypeNames.String,
                 'k3Float' : Sdf.ValueTypeNames.Float3,
+                'kEnum' : Sdf.ValueTypeNames.Int,
                 'kBool' : Sdf.ValueTypeNames.Bool}
 
 
@@ -215,6 +216,8 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             print(traceback.format_exc())
             
     def addProperty(self, prim, mayaNode, attrName, plug):
+        if plug.isDefaultValue():
+            return
         type = self.getMayaType(plug)
         if type is None:
             return
@@ -227,7 +230,7 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
         elif type == 'kFloat':
             value = plug.asFloat()
             sdfType = mayaTypeToSdf[type]
-        elif type == 'kInt':
+        elif type == 'kInt' or type == 'kEnum':
             value = plug.asInt()
             sdfType = mayaTypeToSdf[type]
         elif type == "kBool":
@@ -303,6 +306,8 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             #mayaType = fnAttr.attrType()
             #if mayaType in typeMap:
             #    return typeMap[mayaType]
+        elif attrObj.hasFn(om2.MFn.kEnumAttribute):
+            return 'kEnum'
         else:
             return None
             
@@ -330,9 +335,7 @@ class RSTextureWriter(mayaUsd.lib.ShaderWriter):
             colorspace = mayaNode.findPlug('colorSpace', True).asString()
             textureShader.CreateInput("tex0_colorSpace", Sdf.ValueTypeNames.String).Set(colorspace)
 
-            #textureShader.CreateOutput("outColor", Sdf.ValueTypeNames.Token)
 
-            #Todo add tiling/scale/colorspace/udim mode
             mayaTexCord = om2.MFnDependencyNode(mayaNode.findPlug("uvCoord", True).source().node())
             tilingU = mayaTexCord.findPlug("repeatU", True).asFloat()
             tilingV = mayaTexCord.findPlug("repeatV", True).asFloat()
