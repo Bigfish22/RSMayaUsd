@@ -21,7 +21,7 @@ import re
 
 mayaTypeToSdf = {'kFloat' : Sdf.ValueTypeNames.Float,
                 'kInt' : Sdf.ValueTypeNames.Int,
-                'k3Float' : Sdf.ValueTypeNames.Color3f,
+                'kColor' : Sdf.ValueTypeNames.Color3f,
                 'Kstring' : Sdf.ValueTypeNames.String,
                 'k3Float' : Sdf.ValueTypeNames.Float3,
                 'kEnum' : Sdf.ValueTypeNames.Int,
@@ -226,7 +226,10 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
 
         if type == 'k3Float':
             value = (plug.child(0).asFloat(), plug.child(1).asFloat(), plug.child(2).asFloat())
-            sdfType = mayaTypeToSdf[type]
+            if plug.child(0).name().endswith("R"):
+                sdfType = mayaTypeToSdf['kColor']
+            else:
+                sdfType = mayaTypeToSdf[type]
         elif type == 'kFloat':
             value = plug.asFloat()
             sdfType = mayaTypeToSdf[type]
