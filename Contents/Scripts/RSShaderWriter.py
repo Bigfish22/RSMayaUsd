@@ -157,14 +157,18 @@ mayaShaderToRS = {"MultiOutputChannelTexmapToTexmap" : ["", 'out'],
                 "RedshiftStoreColorToAOV" : ['StoreColorToAOV', 'outColor'],
                 "RedshiftColorCorrection" : ['RSColorCorrection', 'outColor'],
                 "RedshiftColorLayer" :      ['RSColorLayer', 'outColor'],
+                "RedshiftMaterial" :        ['Material', 'outColor'],
+                "remapValue" :              ['RSMathRange', 'out'],
                 "RedshiftVertexColor " :      ['RSUserDataColor', 'out']}
 
 propertyRemaps = {"RedshiftMaterialBlender" : {"outColor": "out"},
+                  "RedshiftBumpBlender" : {"outColor" : "outDisplacementVector"},
                   "blendColors" : {"color1" : "input1", "color2" : "input2", "blender" : "mixAmount", "output" : "outColor"},
                   "reverse"  : {"output" : "out"},
                   "colorConstant" : {"inColor": "color"},
                   "floatConstant" : {"inFloat": "val", "outFloat" : "out"},
-                  "file" : {"outAlpha" : "outColor"}
+                  "file" : {"outAlpha" : "outColor"},
+                  "remapValue" : {"inputValue" : "input", "inputMin" : "old_min", "inputMax" : "old_max", "outputMin" : "new_min", "outputMax" : "new_max", "outColor" : "out"}
                   }
 
 class RSShaderWriter(mayaUsd.lib.ShaderWriter):
@@ -216,11 +220,14 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             print(traceback.format_exc())
             
     def addProperty(self, prim, mayaNode, attrName, plug):
+        if plug.isChild:
+            return
         if plug.isDefaultValue():
             return
         type = self.getMayaType(plug)
         if type is None:
             return
+
         
         sdfType = Sdf.ValueTypeNames.Token
 
@@ -239,6 +246,8 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
         elif type == "kBool":
             value = plug.asBool()
             sdfType = mayaTypeToSdf[type]
+        else:
+            return
 
         attrName = self.usdAttrName(mayaNode.typeName, attrName)
         prim.CreateInput(attrName, sdfType).Set(value)
