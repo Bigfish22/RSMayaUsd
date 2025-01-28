@@ -251,8 +251,11 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             value = plug.asBool()
             sdfType = mayaTypeToSdf[type]
         elif type == "Kstring":
+            if attrName == "tex0":
+                sdfType = Sdf.ValueTypeNames.Asset
+            else:
+                sdfType = mayaTypeToSdf[type]
             value = plug.asString()
-            sdfType = mayaTypeToSdf[type]
         else:
             return
 
