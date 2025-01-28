@@ -23,6 +23,7 @@ mayaTypeToSdf = {'kFloat' : Sdf.ValueTypeNames.Float,
                 'kInt' : Sdf.ValueTypeNames.Int,
                 'kColor' : Sdf.ValueTypeNames.Color3f,
                 'Kstring' : Sdf.ValueTypeNames.String,
+                'k2Float' : Sdf.ValueTypeNames.Float2,
                 'k3Float' : Sdf.ValueTypeNames.Float3,
                 'kEnum' : Sdf.ValueTypeNames.Int,
                 'kBool' : Sdf.ValueTypeNames.Bool}
@@ -168,7 +169,7 @@ propertyRemaps = {"RedshiftMaterialBlender" : {"outColor": "out"},
                   "colorConstant" : {"inColor": "color"},
                   "floatConstant" : {"inFloat": "val", "outFloat" : "out"},
                   "file" : {"outAlpha" : "outColor"},
-                  "remapValue" : {"inputValue" : "input", "inputMin" : "old_min", "inputMax" : "old_max", "outputMin" : "new_min", "outputMax" : "new_max", "outColor" : "out"}
+                  "remapValue" : {"inputValue" : "input", "inputMin" : "old_min", "inputMax" : "old_max", "outputMin" : "new_min", "outputMax" : "new_max", "outColor" : "out", "outValue" : "out"}
                   }
 
 class RSShaderWriter(mayaUsd.lib.ShaderWriter):
@@ -240,11 +241,17 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
         elif type == 'kFloat':
             value = plug.asFloat()
             sdfType = mayaTypeToSdf[type]
+        elif type == 'k2Float':
+            value = (plug.child(0).asFloat(), plug.child(1).asFloat())
+            sdfType = mayaTypeToSdf[type]
         elif type == 'kInt' or type == 'kEnum':
             value = plug.asInt()
             sdfType = mayaTypeToSdf[type]
         elif type == "kBool":
             value = plug.asBool()
+            sdfType = mayaTypeToSdf[type]
+        elif type == "Kstring":
+            value = plug.asString()
             sdfType = mayaTypeToSdf[type]
         else:
             return
@@ -301,6 +308,7 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
         """
         
         typeMap = {om2.MFnNumericData.kFloat:   'kFloat',
+                   om2.MFnNumericData.k2Float:  'k2Float',
                     om2.MFnNumericData.k3Float: 'k3Float',
                     om2.MFnNumericData.kBoolean: 'kBool',
                     om2.MFnData.kString:        'Kstring',
@@ -313,15 +321,14 @@ class RSShaderWriter(mayaUsd.lib.ShaderWriter):
             if mayaType in typeMap:
                 return typeMap[mayaType]
         elif attrObj.hasFn(om2.MFn.kTypedAttribute):
-            fnAttr = om2.MFn.kTypedAttribute
-            return None
-            #mayaType = fnAttr.attrType()
-            #if mayaType in typeMap:
-            #    return typeMap[mayaType]
+            fnAttr = om2.MFnTypedAttribute(attrObj)
+            mayaType = fnAttr.attrType()
+            if mayaType in typeMap:
+                return typeMap[mayaType]
         elif attrObj.hasFn(om2.MFn.kEnumAttribute):
             return 'kEnum'
-        else:
-            return None
+        
+        return None
             
     @classmethod
     def CanExport(cls, exportArgs):
