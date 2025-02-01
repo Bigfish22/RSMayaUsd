@@ -9,7 +9,27 @@ class RSLightPrimWriter(mayaUsd.lib.PrimWriter):
 
         super(RSLightPrimWriter, self).__init__(*args, **kwargs)
 
-        primSchema = UsdLux.RectLight.Define(self.GetUsdStage(), self.GetUsdPath())
+        node = om2.MFnDependencyNode(self.GetMayaObject())
+        lightType = node.findPlug("lightType", True).asInt()
+        if lightType == 0: #area
+            shape = node.findPlug("areaShape", True).asInt()
+            if shape == 0:
+                primSchema = UsdLux.RectLight.Define(self.GetUsdStage(), self.GetUsdPath())
+            elif shape == 1:
+                primSchema = UsdLux.DiskLight.Define(self.GetUsdStage(), self.GetUsdPath())
+            elif shape == 2:
+                primSchema = UsdLux.SphereLight.Define(self.GetUsdStage(), self.GetUsdPath())
+            elif shape == 3:
+                primSchema = UsdLux.CylinderLight.Define(self.GetUsdStage(), self.GetUsdPath())
+            else:
+                 #just for now catch any types we didn't grab before
+                 primSchema = UsdLux.RectLight.Define(self.GetUsdStage(), self.GetUsdPath())
+        elif lightType == 3:
+            primSchema = UsdLux.DistantLight.Define(self.GetUsdStage(), self.GetUsdPath())
+        else:
+            #just for now catch any types we didn't grab before
+            primSchema = UsdLux.RectLight.Define(self.GetUsdStage(), self.GetUsdPath())
+        
         usdPrim = primSchema.GetPrim()
 
         self._SetUsdPrim(usdPrim)
@@ -32,6 +52,17 @@ class RSLightPrimWriter(mayaUsd.lib.PrimWriter):
                 lightPrim.CreateEnableColorTemperatureAttr(True)
             WriteProperty(lightPrim.CreateColorTemperatureAttr(), node, "temperature", usdTime)
             WritePropertyColor(lightPrim.CreateColorAttr(), node, "color", usdTime)
+
+            if usdPrim.GetTypeName() == "DiskLight":
+                lightPrim = UsdLux.DiskLight(usdPrim)
+                lightPrim.CreateRadiusAttr().Set(1)
+            elif usdPrim.GetTypeName() == "SphereLight":
+                lightPrim = UsdLux.SphereLight(usdPrim)
+                lightPrim.CreateRadiusAttr().Set(1)
+            elif usdPrim.GetTypeName() == "CylinderLight":
+                lightPrim = UsdLux.SphereLight(usdPrim)
+                lightPrim.CreateRadiusAttr().Set(1)
+                lightPrim.CreateLengthAttr().Set(2)
 
         except Exception as e:
             print('Write() - Error: %s' % str(e))
