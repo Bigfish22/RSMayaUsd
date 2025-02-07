@@ -1,0 +1,18 @@
+{
+"Plugins":[
+    {
+    "Info": {
+      "UsdMaya":{
+        "PrimWriter": {
+          "providesTranslator": [
+          "RedshiftPhysicalLight",
+          "mesh"
+         ]
+        }
+      }
+    },
+    "Name": "RSPrimWriter",
+    "Type": "python" 
+   }
+  ]
+}

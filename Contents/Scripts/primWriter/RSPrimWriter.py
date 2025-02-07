@@ -73,6 +73,43 @@ class RSLightPrimWriter(mayaUsd.lib.PrimWriter):
         return mayaUsd.lib.PrimWriter.ContextSupport.Supported
     
 
+class RSProcuderalPrimReference(mayaUsd.lib.PrimWriter):
+    """This class writes the procuderal out as a usd reference"""
+    def __init__(self, *args, **kwargs):
+        super(RSProcuderalPrimReference, self).__init__(*args, **kwargs)
+        
+        primSchema = self.GetUsdStage().DefinePrim(self.GetUsdPath())
+        usdPrim = primSchema.GetPrim()
+        self._SetUsdPrim(usdPrim)
+
+
+    def Write(self, usdTime):
+        try:
+            node = om2.MFnDependencyNode(self.GetMayaObject())
+            plug = node.findPlug("inMesh", True)
+            inMeshobj= plug.source().node()
+            inMeshobjNode = om2.MFnDependencyNode(inMeshobj)
+            filePath = inMeshobjNode.findPlug("fileName", True).asString()
+            prim = self.GetUsdPrim()
+            refs = prim.GetReferences()
+            refs.AddReference(filePath)
+
+        except Exception as e:
+            print('Write() - Error: %s' % str(e))
+            print(traceback.format_exc())
+
+    @classmethod
+    def CanExport(cls, exportArgs, exportObj=None):
+        node = om2.MFnDependencyNode(exportObj)
+        plug = node.findPlug("inMesh", True)
+        if plug.isConnected:
+            inMeshobj= plug.source().node()
+            inMeshobjNode = om2.MFnDependencyNode(inMeshobj)
+            if inMeshobjNode.findPlug("outApiType", False).asString() == "RedshiftProxyMesh":
+                return mayaUsd.lib.PrimWriter.ContextSupport.Supported
+        return mayaUsd.lib.PrimWriter.ContextSupport.Unsupported
+
+
 def WriteProperty(usdAttribute, depNode, property, usdTime):
     mayaAttr = depNode.findPlug(property, True)
     usdAttribute.Set(mayaAttr.asFloat(), usdTime)
@@ -82,3 +119,4 @@ def WritePropertyColor(usdAttribute, depNode, property, usdTime):
     usdAttribute.Set((mayaAttr.child(0).asFloat(), mayaAttr.child(1).asFloat(), mayaAttr.child(2).asFloat()), usdTime)
     
 mayaUsd.lib.PrimWriter.Register(RSLightPrimWriter, "RedshiftPhysicalLight")
+#mayaUsd.lib.PrimWriter.Register(RSProcuderalPrimReference, "mesh")

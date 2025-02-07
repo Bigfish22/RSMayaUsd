@@ -20,19 +20,6 @@
      },
      "Name": "RSShaderWriter",
      "Type": "python"
-   },
-   {
-    "Info": {
-      "UsdMaya":{
-        "PrimWriter": {
-          "providesTranslator": [
-          "RedshiftPhysicalLight"
-         ]
-        }
-      }
-    },
-    "Name": "RSPrimWriter",
-    "Type": "python" 
-   }
+    }
   ]
 }
