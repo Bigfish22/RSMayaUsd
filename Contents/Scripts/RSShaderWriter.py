@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import mayaUsd
-from pxr import UsdShade, Sdf, Gf
+from pxr import UsdShade, Sdf, Gf, Vt
 import maya.api.OpenMaya as om2
 import traceback
 from math import pi
@@ -380,9 +380,56 @@ class RSTextureWriter(mayaUsd.lib.ShaderWriter):
         else:
             return mayaUsd.lib.ShaderWriter.ContextSupport.Unsupported
 
+class RSRampWriter(mayaUsd.lib.ShaderWriter):
+    def Write(self, usdTime):
+        try:
+            mayaNode = om2.MFnDependencyNode(self.GetMayaObject()) 
+            nodeName = mayaNode.name()
 
+            textureShader = UsdShade.Shader.Define(self.GetUsdStage(), ((self.GetUsdPath()).GetParentPath()).AppendPath(nodeName))
+            textureShader.CreateIdAttr('redshift::RSRamp')
+
+            knotCount = 0
+            interp = []
+            positions = []
+            values = []
+
+            interpTypes = ["constant", "linear", "linear", "linear", "linear", "linear"]
+            interpType = interpTypes[mayaNode.findPlug("interpolation", False).asInt()]
+
+            attr = mayaNode.findPlug("colorEntryList", True)
+            knotCount = attr.numElements()
+            for i in range(knotCount):
+                element = attr.elementByLogicalIndex(i)
+                position = element.child(0)
+                color = element.child(1)
+
+                interp.append(interpType)
+                positions.append(position.asFloat())
+                values.append((color.child(0).asFloat(), color.child(1).asFloat(), color.child(2).asFloat()))
+            
+            #textureShader.CreateInput("inputInvert", Sdf.ValueTypeNames.Int).Set(0)
+            #textureShader.CreateInput("inputMapping", Sdf.ValueTypeNames.Token).Set('1') #to go the same direction as max, also why is this a token?
+        
+            textureShader.CreateInput("ramp", Sdf.ValueTypeNames.Int).Set(knotCount)
+            textureShader.CreateInput("ramp_basis", Sdf.ValueTypeNames.TokenArray).Set(Vt.TokenArray(interp))
+            textureShader.CreateInput("ramp_keys", Sdf.ValueTypeNames.FloatArray).Set(Vt.FloatArray(positions))
+            textureShader.CreateInput("ramp_values", Sdf.ValueTypeNames.Color3fArray).Set(Vt.Vec3fArray(values))
+
+            return True
+        except Exception as e:
+            print('Write() - Error: %s' % str(e))
+            print(traceback.format_exc())
+        
+    @classmethod
+    def CanExport(cls, exportArgs):
+        if "redshift_usd_material" in exportArgs.convertMaterialsTo:
+            return mayaUsd.lib.ShaderWriter.ContextSupport.Supported
+        else:
+            return mayaUsd.lib.ShaderWriter.ContextSupport.Unsupported
 
 for shaderName in mayaShaderToRS:
     mayaUsd.lib.ShaderWriter.Register(RSShaderWriter, shaderName)
 
 mayaUsd.lib.ShaderWriter.Register(RSTextureWriter, "file")
+mayaUsd.lib.ShaderWriter.Register(RSRampWriter, "ramp")
