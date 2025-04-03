@@ -160,7 +160,8 @@ mayaShaderToRS = {"MultiOutputChannelTexmapToTexmap" : ["", 'out'],
                 "RedshiftColorLayer" :      ['RSColorLayer', 'outColor'],
                 "RedshiftMaterial" :        ['Material', 'outColor'],
                 "remapValue" :              ['RSMathRange', 'out'],
-                "RedshiftVertexColor " :      ['RSUserDataColor', 'out']}
+                "RedshiftVertexColor " :      ['RSUserDataColor', 'out'],
+                "RedshiftOpenPBRMaterial" :    ['OpenPBRMaterial', "outColor"]}
 
 propertyRemaps = {"RedshiftMaterialBlender" : {"outColor": "out"},
                   "RedshiftBumpBlender" : {"outColor" : "outDisplacementVector"},
